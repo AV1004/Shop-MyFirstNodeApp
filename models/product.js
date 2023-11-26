@@ -1,22 +1,4 @@
-const fs = require("fs");
-const path = require("path");
-const { title } = require("process");
-
-const p = path.join(
-  path.dirname(process.mainModule.filename),
-  "data",
-  "products.json"
-);
-
-const getProdcutsFromFile = (CB) => {
-  fs.readFile(p, (err, fileContent) => {
-    if (err) {
-      CB([]);
-    } else {
-      CB(JSON.parse(fileContent));
-    }
-  });
-};
+const db = require("../util/database");
 
 module.exports = class Product {
   constructor(title, imageUrl, price, description) {
@@ -27,59 +9,21 @@ module.exports = class Product {
   }
 
   save() {
-    getProdcutsFromFile((products) => {
-      this.id = Math.random().toString();
-      products.push({
-        id: this.id,
-        title: this.title,
-        imageUrl: this.imageUrl,
-        price: this.price,
-        description: this.description,
-      });
-
-      fs.writeFile(p, JSON.stringify(products), (err) => {
-        console.log(err);
-      });
-    });
+    return db.execute(
+      "INSERT INTO products (title,price,imageUrl,description) VALUES (?,?,?,?)",
+      [this.title, this.price, this.imageUrl, this.description]
+    );
   }
 
-  static fetchAll(CB) {
-    getProdcutsFromFile(CB);
+  static fetchAll() {
+    return db.execute("SELECT * FROM products");
   }
 
-  static findById(id, CB) {
-    getProdcutsFromFile((products) => {
-      const product = products.find((p) => p.id === id);
-      CB(product);
-    });
+  static findById(id) {
+    return db.execute(`SELECT * FROM products WHERE products.id=?`, [id]);
   }
 
-  static updateProduct(id, title, imageUrl, price, description) {
-    const updateProduct = {
-      id: id,
-      title: title,
-      imageUrl: imageUrl,
-      price: price,
-      description: description,
-    };
-    getProdcutsFromFile((products) => {
-      const productIndex = products.findIndex((p) => p.id === id);
-      products[productIndex] = updateProduct;
+  static updateProduct(id, title, imageUrl, price, description) {}
 
-      fs.writeFile(p, JSON.stringify(products), (err) => {
-        console.log(err);
-      });
-    });
-  }
-
-  static delete(id) {
-    getProdcutsFromFile((products) => {
-      const productIndex = products.findIndex((p) => p.id === id);
-      products.splice(productIndex, 1);
-
-      fs.writeFile(p, JSON.stringify(products), (err) => {
-        console.log(err);
-      });
-    });
-  }
+  static delete(id) {}
 };
